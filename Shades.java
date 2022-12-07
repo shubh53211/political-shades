@@ -27,9 +27,10 @@ class Individual {
 	double acquiredShade;
 	double alpha;
 	double beta;
+	double probEchoChamberEncounter;
 	ArrayList<Double> shadeHistory;
 	int id;	
-	Individual(int id, double shade, double Alpha, double Beta)
+	Individual(int id, double shade, double Alpha, double Beta, double probEchoChamberEncounter)
 	{
 		this.id = id;
 		currentShade = shade;
@@ -37,6 +38,7 @@ class Individual {
 		acquiredShade = shade;
 		alpha = Alpha;
 		beta = Beta;
+		this.probEchoChamberEncounter = probEchoChamberEncounter;
 		shadeHistory = new ArrayList<Double>();
 		shadeHistory.add(shade);
 	}
@@ -49,6 +51,21 @@ class Individual {
 		for(int i = 0; i < shadeHistory.size(); i++)
 			result = "" + shadeHistory.get(i) + "\t" + result;
 		return result;
+	}
+
+	Boolean isEchoChamberEncounter(double randDouble)
+	{
+		if( randDouble <= probEchoChamberEncounter )
+			return true;
+		else
+			return false; 
+	}
+
+	void increaseProbEchoChamberEncounter(double factor)
+	{
+		probEchoChamberEncounter *= factor;
+		if( probEchoChamberEncounter > 1.0 )
+			probEchoChamberEncounter = 1.0;
 	}
 
 	Boolean inBase(double encounterShade)
@@ -117,6 +134,9 @@ public class Shades {
 
 	static void runSimulation(int numIterations)
 	{
+		double numECEncounters = 0;
+		double numRegEncounters = 0;
+
 		for(int i = 1; i <= numIterations; i++)
 		{
 			Boolean save = false;
@@ -125,20 +145,25 @@ public class Shades {
  
 			for(int j = 0; j < numIndividuals; j++)
 			{
-				if( rand.nextDouble() < probEchoChamberEncounter )
+				Individual ind = individuals.get(j);
+				if( ind.isEchoChamberEncounter(rand.nextDouble()) )
 				{
+					numECEncounters += 1;
 					echoChamberEncounter(j, save);
 					if( echoChamberAddictive )
 					{
-						probEchoChamberEncounter *= addictionFactor;
-						if( probEchoChamberEncounter > 1.0 )
-							probEchoChamberEncounter = 1.0;
+						ind.increaseProbEchoChamberEncounter(addictionFactor);
 					}
 				}
 				else	
+				{
+					numRegEncounters += 1;
 					regularEncounter(j, save);
+				}
 			}
 		}
+		System.out.println("Num EC Encounters: " + numECEncounters);
+		System.out.println("Num Reg Encounters: " + numRegEncounters);
 	}
 
 	public static void encounterWithLessExtremeEchoChamber(int indiv, Boolean save)
@@ -330,7 +355,7 @@ public class Shades {
 		while(inIndividuals.hasNextLine())
 		{
 			double shade = Double.parseDouble(inIndividuals.nextLine());
-			individuals.put(id, new Individual(id, shade, alpha, beta) );
+			individuals.put(id, new Individual(id, shade, alpha, beta, probEchoChamberEncounter) );
 			id++;
 		}
 		inIndividuals.close();
